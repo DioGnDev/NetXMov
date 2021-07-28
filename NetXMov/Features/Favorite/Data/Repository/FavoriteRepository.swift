@@ -6,12 +6,12 @@
 //
 
 import Foundation
-import Combine
+import RxSwift
 import RealmSwift
 
 protocol FavoriteRepositoryProtocol{
-    func getFavorites() -> AnyPublisher<[DiscoverModel], DatabaseError>
-    func deleteFavorite(from movieId: Int) -> AnyPublisher<Bool, DatabaseError>
+    func getFavorites() -> Observable<[DiscoverModel]>
+    func deleteFavorite(from movieId: Int) -> Observable<Bool>
 }
 
 class FavoriteRepository: NSObject {
@@ -33,7 +33,7 @@ class FavoriteRepository: NSObject {
 
 extension FavoriteRepository: FavoriteRepositoryProtocol{
     
-    func getFavorites() -> AnyPublisher<[DiscoverModel], DatabaseError> {
+    func getFavorites() -> Observable<[DiscoverModel]> {
         return localeDataSource.getFavorites().map { entities in
             entities.map { DiscoverModel(id: $0.id,
                                          imgThumbnail: DiscoverModel.transformImage(img: $0.imgThumbnail),
@@ -41,13 +41,11 @@ extension FavoriteRepository: FavoriteRepositoryProtocol{
                                          popularity: $0.popularity,
                                          releaseDate: $0.releaseDate,
                                          isFavourite: $0.isFavourite) }
-        }.eraseToAnyPublisher()
+        }
     }
     
-    func deleteFavorite(from movieId: Int) -> AnyPublisher<Bool, DatabaseError> {
+    func deleteFavorite(from movieId: Int) -> Observable<Bool> {
         return localeDataSource.deleteFavorite(from: movieId)
     }
-    
-    
     
 }

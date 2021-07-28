@@ -6,13 +6,21 @@
 //
 
 import Foundation
-import Combine
+import RxSwift
 import SwiftUI
 
-class GenrePresenter: ObservableObject {
+protocol GenrePresenterProtocol {
+    func getGenres()
+    func addFavorite(from movie: DiscoverModel)
+    func deleteFavorite(from movieId: Int)
+    func makefavorite(index: Int)
+    func tapGenre(with index: Int, completion: @escaping (Int) -> Void)
+}
+
+class GenrePresenter: ObservableObject, GenrePresenterProtocol{
     
     private let router = GenreRouter()
-    private var cancellables: Set<AnyCancellable> = []
+    private var disposeBag = DisposeBag()
     private let usecase: GenreUseCase
     private let favUsecase: FavoriteUsecase
     private let discoverUsecase: DiscoverUseCase
@@ -30,69 +38,59 @@ class GenrePresenter: ObservableObject {
     }
     
     func getGenres(){
-        isLoading = true
+        self.isLoading = true
         usecase.getGenres()
-            .receive(on: RunLoop.main)
-            .sink { result in
-                switch result {
-                case .failure(let error):
-                    self.isLoading = false
-                    self.error = error.description
-                case .finished:
-                    self.isLoading = false
-                    if let selectedGenre =  self.genres.filter({ $0.isChecked == true }).first{
-                        //discover movie with genre
-                        self.getDiscoveryMovie(with: selectedGenre.id)
-                    }
-                }
-            } receiveValue: { genres in
+            .observe(on: MainScheduler.instance)
+            .subscribe { genres in
                 self.isLoading = false
                 self.genres = genres
-            }.store(in: &cancellables)
+            } onError: { error in
+                self.isLoading = false
+                self.error = error.localizedDescription
+            } onCompleted: {
+                self.isLoading = false
+                let id = self.genres.filter{ $0.isChecked }.map{ $0.id }.first ?? 0
+                self.getDiscoveryMovie(with: id)
+            }.disposed(by: disposeBag)
+        
     }
     
     func getDiscoveryMovie(with id: Int){
         self.isLoading = true
         discoverUsecase.getMovie(with: id)
-            .receive(on: RunLoop.main)
-            .sink { result in
-                switch result{
-                case .failure(let error):
-                    self.isLoading = false
-                    self.error = error.description
-                case .finished:
-                    self.isLoading = false
-                    break
-                }
-            } receiveValue: { model in
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { movies in
                 self.isLoading = false
-                self.movies = model
-            }.store(in: &cancellables)
-        
+                self.movies = movies
+            }, onError: { error in
+                self.isLoading = false
+            }, onCompleted: {
+                self.isLoading = false
+            }).disposed(by: disposeBag)
     }
     
     func addFavorite(from movie: DiscoverModel){
         discoverUsecase.addFavorite(from: movie)
-            .sink { result in
+            .subscribe { succeeded in
                 
-            } receiveValue: { succeeded in
+            } onError: { error in
                 
-            }.store(in: &cancellables)
+            } onCompleted: {
+                
+            }.disposed(by: disposeBag)
+        
     }
     
     func deleteFavorite(from movieId: Int) {
         favUsecase.deleteFavorite(from: movieId)
-            .sink { result in
-                switch result {
-                case .failure(let error):
-                    print("error", error.description)
-                    break
-                case .finished:
-                    break
-                }
-            } receiveValue: { succeeded in
-                print("success", succeeded)
-            }.store(in: &cancellables)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { succeeded in
+                
+            }, onError: { error in
+                
+            }, onCompleted: {
+                
+            }).disposed(by: disposeBag)
         
     }
     

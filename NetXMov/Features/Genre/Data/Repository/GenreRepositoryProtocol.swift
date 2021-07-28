@@ -5,10 +5,10 @@
 //
 
 import Foundation
-import Combine
+import RxSwift
 
 protocol GenreRepositoryProtocol {
-    func getGenres() -> AnyPublisher<[GenreModel], NError>
+    func getGenres() -> Observable<[GenreModel]>
 }
 
 class GenreRepository: GenreRepositoryProtocol {
@@ -29,11 +29,12 @@ class GenreRepository: GenreRepositoryProtocol {
         return GenreRepository(localDataSource: local, remoteDataSource: remote)
     }
     
-    func getGenres() -> AnyPublisher<[GenreModel], NError> {
-        return remoteDataSource.getGenres().map { result in
-            result.genres.map { GenreModel(id: $0.id,
-                                           name: $0.name,
-                                           isChecked: $0.name.contains("Action") ? true : false) }
-        }.eraseToAnyPublisher()
+    func getGenres() -> Observable<[GenreModel]> {
+        return remoteDataSource.getGenres().map { response in
+            response.genres.map { GenreModel(id: $0.id,
+                                             name: $0.name,
+                                             isChecked: $0.name.contains("Action") ? true : false) }
+        }
     }
+    
 }

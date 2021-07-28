@@ -6,12 +6,12 @@
 //
 
 import Foundation
-import Combine
 import RealmSwift
+import RxSwift
 
 protocol LocaleFavoriteDataSourceProtocol {
-    func getFavorites() -> AnyPublisher<[FavoriteEntity], DatabaseError>
-    func deleteFavorite(from movieId: Int) -> AnyPublisher<Bool, DatabaseError>
+    func getFavorites() -> Observable<[FavoriteEntity]>
+    func deleteFavorite(from movieId: Int) -> Observable<Bool>
 }
 
 class LocaleFavoriteDataSource: NSObject {
@@ -29,9 +29,29 @@ class LocaleFavoriteDataSource: NSObject {
 
 extension LocaleFavoriteDataSource: LocaleFavoriteDataSourceProtocol {
     
-    func deleteFavorite(from movieId: Int) -> AnyPublisher<Bool, DatabaseError> {
+    func getFavorites() -> Observable<[FavoriteEntity]> {
         
-        return Future<Bool, DatabaseError> { completion in
+        return Observable<[FavoriteEntity]>.create { observer in
+            
+            if let realm = self.realm {
+                let results: Results<FavoriteEntity> = {
+                    realm.objects(FavoriteEntity.self).sorted(byKeyPath: "title", ascending: true)
+                }()
+                
+                let entities = Array(results)
+                observer.onNext(entities)
+                observer.onCompleted()
+            }else{
+                observer.onError(DatabaseError.invalidInstance)
+            }
+            
+            return Disposables.create()
+        }
+    }
+    
+    func deleteFavorite(from movieId: Int) -> Observable<Bool> {
+        
+        return Observable<Bool>.create { observer in
             
             if let realm = self.realm {
                 
@@ -40,31 +60,17 @@ extension LocaleFavoriteDataSource: LocaleFavoriteDataSourceProtocol {
                         try realm.write{
                             if let entity = realm.object(ofType: FavoriteEntity.self, forPrimaryKey: movieId) {
                                 realm.delete(entity)
-                                completion(.success(true))
+                                observer.onNext(true)
                             }
                         }
                     }catch{
-                        completion(.failure(.requestFailed))
+                        observer.onError(DatabaseError.requestFailed)
                     }
                 }
             }
-        }.eraseToAnyPublisher()
-        
-    }
-    
-    func getFavorites() -> AnyPublisher<[FavoriteEntity], DatabaseError> {
-        return Future<[FavoriteEntity], DatabaseError> { completion in
-            if let realm = self.realm {
-                let results: Results<FavoriteEntity> = {
-                    realm.objects(FavoriteEntity.self).sorted(byKeyPath: "title", ascending: true)
-                }()
-                
-                let entities = Array(results)
-                completion(.success(entities))
-            }else{
-                completion(.failure(.invalidInstance))
-            }
-        }.eraseToAnyPublisher()
+            
+            return Disposables.create()
+        }
     }
     
 }

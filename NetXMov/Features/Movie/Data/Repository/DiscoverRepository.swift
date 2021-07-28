@@ -6,11 +6,11 @@
 //
 
 import Foundation
-import Combine
+import RxSwift
 
 protocol DiscoverRepositoryProtocol{
-    func getMovie(with id: Int) -> AnyPublisher<[DiscoverModel], NError>
-    func addFavorite(from movie: DiscoverModel) -> AnyPublisher<Bool, DatabaseError>
+    func getMovie(with id: Int) -> Observable<[DiscoverModel]>
+    func addFavorite(from movie: DiscoverModel) -> Observable<Bool>
 }
 
 class DiscoverRepository: NSObject {
@@ -34,8 +34,7 @@ class DiscoverRepository: NSObject {
 
 extension DiscoverRepository: DiscoverRepositoryProtocol{
     
-    func getMovie(with id: Int) -> AnyPublisher<[DiscoverModel], NError> {
-        
+    func getMovie(with id: Int) -> Observable<[DiscoverModel]> {
         return remoteDataSource.getMovie(with: id)
             .map { response in
                 response.results?.map { DiscoverModel(id: $0.id ?? 0,
@@ -44,11 +43,11 @@ extension DiscoverRepository: DiscoverRepositoryProtocol{
                                                       overview: $0.overview ?? "",
                                                       popularity: Int($0.popularity ?? 0),
                                                       releaseDate: $0.releaseDate?.formatDate() ?? "") } ?? []
-            }.eraseToAnyPublisher()
+            }
+            .share(replay: 1)
     }
     
-    func addFavorite(from movie: DiscoverModel) -> AnyPublisher<Bool, DatabaseError> {
-        
+    func addFavorite(from movie: DiscoverModel) -> Observable<Bool> {
         let entity = FavoriteEntity()
         entity.id = movie.id
         entity.imgThumbnail = movie.imgThumbnail?.absoluteString ?? ""
@@ -57,7 +56,8 @@ extension DiscoverRepository: DiscoverRepositoryProtocol{
         entity.popularity = movie.popularity
         entity.releaseDate = movie.releaseDate
         entity.title = movie.title
-       
+        
         return localeDataSource.addFavourite(from: entity)
     }
+    
 }

@@ -6,11 +6,11 @@
 //
 
 import Foundation
-import Combine
 import Alamofire
+import RxSwift
 
 protocol GenreRemoteDataSourceProtocol {
-    func getGenres() -> AnyPublisher<GenreResponse, NError>
+    func getGenres() -> Observable<GenreResponse>
 }
 
 class GenreRemoteDataSource: NSObject {
@@ -22,26 +22,28 @@ class GenreRemoteDataSource: NSObject {
 
 extension GenreRemoteDataSource: GenreRemoteDataSourceProtocol {
     
-    func getGenres() -> AnyPublisher<GenreResponse, NError> {
+    func getGenres() -> Observable<GenreResponse> {
         
         let params = ["api_key": "4b92f9b248d265764f53e0b869bebe4d"]
         
-        return Future<GenreResponse, NError> { completion in
+        return Observable<GenreResponse>.create { observer in
             NetworkManager.sharedInstance.request(with: "/genre/movie/list", withParameter: params) { result in
                 switch result{
                 case let .failure(error):
-                    completion(.failure(error))
+                    observer.onError(error)
                 case let .success(data):
                     do {
                         let response = try JSONDecoder().decode(GenreResponse.self, from: data)
-                        completion(.success(response))
+                        observer.onNext(response)
+                        observer.onCompleted()
                     }catch{
-                        completion(.failure(.parseError))
+                        observer.onError(NError.parseError)
                     }
                     
                 }
             }
-        }.eraseToAnyPublisher()
+            
+            return Disposables.create()
+        }
     }
-    
 }

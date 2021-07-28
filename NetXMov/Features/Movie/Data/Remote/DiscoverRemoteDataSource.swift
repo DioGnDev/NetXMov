@@ -6,11 +6,11 @@
 //
 
 import Foundation
-import Combine
+import RxSwift
 import Alamofire
 
 protocol DiscoverRemoteDataSourceProtocol {
-    func getMovie(with id: Int) -> AnyPublisher<DiscoverResponse, NError>
+    func getMovie(with id: Int) -> Observable<DiscoverResponse>
 }
 
 class DiscoverRemoteDataSource: NSObject {
@@ -22,29 +22,31 @@ class DiscoverRemoteDataSource: NSObject {
 
 extension DiscoverRemoteDataSource: DiscoverRemoteDataSourceProtocol{
     
-    func getMovie(with id: Int) -> AnyPublisher<DiscoverResponse, NError> {
+    func getMovie(with id: Int) -> Observable<DiscoverResponse> {
         
         let params: Parameters = ["api_key": "4b92f9b248d265764f53e0b869bebe4d",
                                   "with_genres": id]
         
-        return Future<DiscoverResponse, NError> { completion in
+        return Observable<DiscoverResponse>.create { observer in
             NetworkManager.sharedInstance.request(with: "/discover/movie", withParameter: params) { result in
                 switch result {
                 case let .failure(error):
-                    completion(.failure(error))
-                    break
+                    observer.onError(error)
                 case let .success(data):
                     do{
                         let response = try JSONDecoder().decode(DiscoverResponse.self, from: data)
-                        completion(.success(response))
+                        observer.onNext(response)
+                        observer.onCompleted()
                     }catch {
-                        completion(.failure(.serializationError))
+                        observer.onError(error)
                     }
                     break
                 }
             }
-        }.eraseToAnyPublisher()
+            
+            return Disposables.create()
+        }
+        
     }
-    
-    
+
 }

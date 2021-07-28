@@ -6,11 +6,11 @@
 //
 
 import Foundation
-import Combine
+import RxSwift
 
 protocol DiscoverUseCase {
-    func getMovie(with id: Int) -> AnyPublisher<[DiscoverModel], NError>
-    func addFavorite(from movie: DiscoverModel) -> AnyPublisher<Bool, DatabaseError>
+    func getMovie(with id: Int) -> Observable<[DiscoverModel]>
+    func addFavorite(from movie: DiscoverModel) -> Observable<Bool>
 }
 
 class DiscoverInteractor: DiscoverUseCase {
@@ -21,11 +21,12 @@ class DiscoverInteractor: DiscoverUseCase {
         self.repository = repository
     }
     
-    func getMovie(with id: Int) -> AnyPublisher<[DiscoverModel], NError> {
+    func getMovie(with id: Int) -> Observable<[DiscoverModel]> {
         return repository.getMovie(with: id)
     }
     
-    func addFavorite(from movie: DiscoverModel) -> AnyPublisher<Bool, DatabaseError> {
+    func addFavorite(from movie: DiscoverModel) -> Observable<Bool> {
         return repository.addFavorite(from: movie)
     }
+
 }

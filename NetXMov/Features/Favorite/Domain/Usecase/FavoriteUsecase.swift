@@ -5,11 +5,11 @@
 //
 
 import Foundation
-import Combine
+import RxSwift
 
 protocol FavoriteUsecase {
-    func getFavorites() -> AnyPublisher<[DiscoverModel], DatabaseError>
-    func deleteFavorite(from movieId: Int) -> AnyPublisher<Bool, DatabaseError>
+    func getFavorites() -> Observable<[DiscoverModel]>
+    func deleteFavorite(from movieId: Int) -> Observable<Bool>
 }
 
 class FavoriteInteractor: FavoriteUsecase {
@@ -20,12 +20,12 @@ class FavoriteInteractor: FavoriteUsecase {
         self.repository = repository
     }
     
-    func getFavorites() -> AnyPublisher<[DiscoverModel], DatabaseError> {
+    func getFavorites() -> Observable<[DiscoverModel]> {
         return repository.getFavorites()
     }
     
-    func deleteFavorite(from movieId: Int) -> AnyPublisher<Bool, DatabaseError> {
+    func deleteFavorite(from movieId: Int) -> Observable<Bool> {
         return repository.deleteFavorite(from: movieId)
     }
-    
+
 }

@@ -6,7 +6,7 @@
 
 import Foundation
 import SwiftUI
-import Combine
+import RxSwift
 
 class FavoritePresenter: ObservableObject {
     
@@ -14,7 +14,7 @@ class FavoritePresenter: ObservableObject {
     @Published var errorMessage: String = ""
     
     private var usecase: FavoriteUsecase
-    private var cancellables = Set<AnyCancellable>()
+    private var disposeBag = DisposeBag()
     
     init(usecase: FavoriteUsecase) {
         self.usecase = usecase
@@ -23,35 +23,30 @@ class FavoritePresenter: ObservableObject {
     func getFavorites(){
         
         usecase.getFavorites()
-            .receive(on: RunLoop.main)
-            .sink { result in
-                switch result {
-                case .failure(let error):
-                    print(error.description)
-                    break
-                case .finished:
-                    break
-                }
-            } receiveValue: { models in
-                self.favorites = models
-            }.store(in: &cancellables)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { favorites in
+                self.favorites = favorites
+            }, onError: { error in
+                print("error", error.localizedDescription)
+            }, onCompleted: {
+                
+            }).disposed(by: disposeBag)
     }
     
     func deleteMovie(at index: Int){
-
+        
         let movieID = favorites[index].id
         
         usecase.deleteFavorite(from: movieID)
-            .sink { result in
-                switch result {
-                case .failure(let error):
-                    self.errorMessage = error.description
-                case .finished:
-                    break
-                }
-            } receiveValue: { succeed in
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { succeeded in
                 self.favorites.remove(at: index)
-            }.store(in: &cancellables)
+            }, onError: { error in
+                print("error", error.localizedDescription)
+            }, onCompleted: {
+                
+            }).disposed(by: disposeBag)
+        
     }
     
 }

@@ -5,10 +5,10 @@
 //
 
 import Foundation
-import Combine
+import RxSwift
 
 protocol GenreUseCase {
-    func getGenres() -> AnyPublisher<[GenreModel], NError>
+    func getGenres() -> Observable<[GenreModel]>
 }
 
 class GenreInteractor: GenreUseCase{
@@ -19,7 +19,8 @@ class GenreInteractor: GenreUseCase{
         self.repository = repository
     }
     
-    func getGenres() -> AnyPublisher<[GenreModel], NError> {
+    func getGenres() -> Observable<[GenreModel]> {
         return repository.getGenres()
     }
+    
 }

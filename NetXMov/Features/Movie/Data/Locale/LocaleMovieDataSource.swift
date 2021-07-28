@@ -7,11 +7,11 @@
 
 import Foundation
 import Foundation
-import Combine
+import RxSwift
 import RealmSwift
 
 protocol LocaleMovieDataSourceProtocol {
-    func addFavourite(from movie: FavoriteEntity) -> AnyPublisher<Bool, DatabaseError>
+    func addFavourite(from movie: FavoriteEntity) -> Observable<Bool>
 }
 
 class LocaleMovieDataSource: NSObject {
@@ -29,13 +29,13 @@ class LocaleMovieDataSource: NSObject {
 
 extension LocaleMovieDataSource: LocaleMovieDataSourceProtocol {
     
-    func addFavourite(from movie: FavoriteEntity) -> AnyPublisher<Bool, DatabaseError> {
+    func addFavourite(from movie: FavoriteEntity) -> Observable<Bool> {
         
-        return Future<Bool, DatabaseError> { completion in
+        return Observable<Bool>.create { observer in
             
             guard let realm = self.realm else {
-                completion(.failure(.invalidInstance))
-                return
+                observer.onError(DatabaseError.invalidInstance)
+                return Disposables.create()
             }
             
             DispatchQueue.main.async {
@@ -43,13 +43,17 @@ extension LocaleMovieDataSource: LocaleMovieDataSourceProtocol {
                     try realm.write{
                         realm.add(movie, update: .all)
                     }
-                    completion(.success(true))
+                    
+                    observer.onNext(true)
+                    observer.onCompleted()
                 }catch {
-                    completion(.failure(.saveFailed))
+                    observer.onError(DatabaseError.saveFailed)
                 }
             }
             
-        }.eraseToAnyPublisher()
+            return Disposables.create()
+        }
     }
+    
     
 }
