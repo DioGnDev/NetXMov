@@ -1,12 +1,14 @@
 //
-//  GenreRouter.swift
+//  FavoriteRouter.swift
 //  NetXMov
+//
+//  Created by Ilham Hadi P. on 30/07/21.
 //
 
 import Foundation
 import SwiftUI
 
-class GenreRouter {
+class FavoriteRouter {
   
   func makeDetailView(for movie: DiscoverModel) -> some View {
     let reviewUsecase = ReviewInjection.init().provideReview(movie: movie)

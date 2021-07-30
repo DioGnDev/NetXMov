@@ -8,11 +8,11 @@ import Foundation
 
 // MARK: - GenreResponse
 struct GenreResponse: Codable {
-    let genres: [GenreData]
+  let genres: [GenreData]
 }
 
 // MARK: - Genre
 struct GenreData: Codable {
-    let id: Int
-    let name: String
+  let id: Int
+  let name: String
 }

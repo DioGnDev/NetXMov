@@ -1,15 +1,14 @@
 //
-//  MovieRow.swift
+//  FavoriteRow.swift
 //  NetXMov
 //
-//  Created by Ilham Hadi P. on 25/07/21.
+//  Created by Ilham Hadi P. on 30/07/21.
 //
 
 import SwiftUI
 import SDWebImageSwiftUI
 
-struct MovieRow: View {
-  
+struct FavoriteRow: View {
   @Binding var movie: DiscoverModel
   @State var isFavourite: Bool = false
   
@@ -27,24 +26,11 @@ struct MovieRow: View {
         .cornerRadius(20)
       
       VStack(alignment: .leading, spacing: 5){
-        HStack {
-          Text(movie.title)
-            .font(.headline)
-            .fontWeight(.medium)
-            .foregroundColor(Color.black)
-            .multilineTextAlignment(.leading)
-          
-          Spacer()
-          
-          Image(systemName: movie.isFavourite || isFavourite ? "suit.heart.fill" : "suit.heart")
-            .renderingMode(.template)
-            .aspectRatio(contentMode: .fit)
-            .foregroundColor(Color.pink)
-            .onTapGesture {
-              onTapped?()
-              isFavourite.toggle()
-            }
-        }
+        Text(movie.title)
+          .font(.headline)
+          .fontWeight(.medium)
+          .foregroundColor(Color.black)
+          .multilineTextAlignment(.leading)
         
         Text(movie.overview)
           .font(.subheadline)
@@ -69,9 +55,8 @@ struct MovieRow: View {
   }
 }
 
-
-struct MovieRow_Previews: PreviewProvider {
+struct FavoriteRow_Previews: PreviewProvider {
   static var previews: some View {
-    MovieRow(movie: .constant(DiscoverModel.init()))
+    FavoriteRow(movie: .constant(DiscoverModel.init()))
   }
 }
