@@ -8,50 +8,65 @@ import Foundation
 import SwiftUI
 import Combine
 
-class FavoritePresenter: ObservableObject {
-    
-    @Published var favorites: [DiscoverModel] = []
-    @Published var errorMessage: String = ""
-    
-    private var usecase: FavoriteUsecase
-    private var cancellables = Set<AnyCancellable>()
-    
-    init(usecase: FavoriteUsecase) {
-        self.usecase = usecase
-    }
-    
-    func getFavorites(){
-        
-        usecase.getFavorites()
-            .receive(on: RunLoop.main)
-            .sink { result in
-                switch result {
-                case .failure(let error):
-                    print(error.description)
-                    break
-                case .finished:
-                    break
-                }
-            } receiveValue: { models in
-                self.favorites = models
-            }.store(in: &cancellables)
-    }
-    
-    func deleteMovie(at index: Int){
+protocol FavoritePresenterProtocol: BasePresenter {
+  func getFavorites()
+}
 
-        let movieID = favorites[index].id
-        
-        usecase.deleteFavorite(from: movieID)
-            .sink { result in
-                switch result {
-                case .failure(let error):
-                    self.errorMessage = error.description
-                case .finished:
-                    break
-                }
-            } receiveValue: { succeed in
-                self.favorites.remove(at: index)
-            }.store(in: &cancellables)
-    }
+class FavoritePresenter: ObservableObject, FavoritePresenterProtocol {
+  @Published var favorites: [DiscoverModel] = []
+  @Published var errorMessage: String = ""
+  
+  private let router = FavoriteRouter()
+  private var usecase: FavoriteUsecase
+  private var cancellables = Set<AnyCancellable>()
+  
+  init(usecase: FavoriteUsecase) {
+    self.usecase = usecase
+  }
+  
+  func getFavorites(){
+    usecase.getFavorites()
+      .sink { result in
+        switch result {
+        case .failure(let error):
+          print("error \(error)")
+          break
+        case .finished:
+          break
+        }
+      } receiveValue: { favorites in
+        self.favorites = favorites
+      }.store(in: &cancellables)
+  }
+  
+  func deleteFavorite(at index: Int) {
+    let movieID = favorites[index].id
+    usecase.deleteFavorite(from: movieID)
+      .sink(receiveCompletion: { result in
+        switch result {
+        case .failure(let error):
+          print("error \(error)")
+          break
+        case .finished:
+          break
+        }
+      }, receiveValue: { succeeded in
+        self.favorites.remove(at: index)
+      }).store(in: &cancellables)
+  }
+  
+  func makefavorite(at index: Int) {
+    favorites[index].isFavourite.toggle()
+  }
+  
+  //Goto Detail Movie
+  func linkBuilder<Content: View>(for movie: DiscoverModel,
+                                  @ViewBuilder content: () -> Content) -> some View {
+    NavigationLink(
+      destination: router.makeDetailView(for: movie),
+      label: {
+        content()
+      })
     
+  }
 }
