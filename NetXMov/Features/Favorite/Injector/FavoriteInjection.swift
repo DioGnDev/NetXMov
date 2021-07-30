@@ -7,7 +7,6 @@ import Foundation
 import RealmSwift
 
 class FavoriteInjection {
-  
   func provideRepository() -> FavoriteRepositoryProtocol {
     let realm = try? Realm()
     let locale = LocaleFavoriteDataSource.sharedInstance(realm)
